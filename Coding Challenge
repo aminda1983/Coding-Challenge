@@ -1,0 +1,37 @@
+import csv
+import requests
+import logging
+
+# Setup logging to capture errors
+logging.basicConfig(filename='error_log.txt', level=logging.ERROR, 
+                    format='%(asctime)s - %(message)s')
+
+# Function to create a user by sending a POST request
+def create_user(user_data):
+    try:
+        response = requests.post("https://example.com/api/create_user", json=user_data)
+        if response.status_code != 201:
+            logging.error(f"Error creating user: {user_data['email']} - Status Code: {response.status_code}")
+            return False
+        return True
+    except requests.exceptions.RequestException as e:
+        # Log network or request-related errors
+        logging.error(f"Request exception for user {user_data['email']}: {e}")
+        return False
+
+# Function to read the CSV and process each user
+def create_users(file_path):
+    with open(file_path, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Skip rows missing critical fields (e.g., email)
+            if not row.get('email'):
+                logging.error(f"Skipping user due to missing email: {row}")
+                continue
+
+            # Attempt to create the user
+            if not create_user(row):
+                logging.error(f"Failed to create user: {row['email']}")
+
+# Run the user creation process
+create_users("users.csv")
